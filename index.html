@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Oi, Brasil! - Mobile Portuguese App</title>
     <style>
         :root {
@@ -24,6 +24,7 @@
             -webkit-tap-highlight-color: transparent;
         }
 
+        /* The Ultimate iOS full-screen viewport fix */
         body {
             background-color: #f0f4f8;
             color: var(--dark-gray);
@@ -32,13 +33,14 @@
             height: 100vh;
             height: -webkit-fill-available;
             overflow: hidden;
+            padding-bottom: env(safe-area-inset-bottom); /* Protects home swipe bar */
         }
 
         html {
             height: -webkit-fill-available;
+            overflow: hidden;
         }
 
-        /* Mobile Container: Stacked View with Bottom Nav */
         .app-container {
             display: flex;
             flex-direction: column;
@@ -47,21 +49,19 @@
             position: relative;
         }
 
-        /* Screen States */
+        /* Screen setups with explicit bottom tab clearance */
         .screen {
             display: none;
             flex-direction: column;
-            flex-grow: 1;
-            height: calc(100vh - 65px);
+            height: calc(100% - 65px);
             overflow-y: auto;
-            padding-bottom: 20px;
+            -webkit-overflow-scrolling: touch;
         }
 
         .screen.active {
             display: flex;
         }
 
-        /* App Header */
         .mobile-header {
             background-color: var(--br-blue);
             color: white;
@@ -71,6 +71,7 @@
             align-items: center;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             z-index: 10;
+            padding-top: env(safe-area-inset-top, 15px);
         }
 
         .brand {
@@ -81,7 +82,6 @@
             font-weight: bold;
         }
 
-        /* Map Canvas Styling for Mobile */
         #canvasContainer {
             width: 100%;
             height: 100%;
@@ -96,14 +96,15 @@
             height: 100%;
         }
 
-        /* Bottom Tab Navigation */
+        /* Bottom Sticky Bar - guaranteed to stay visible */
         .bottom-nav {
             height: 65px;
             background-color: white;
             border-top: 1px solid var(--border-color);
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
-            z-index: 10;
+            z-index: 30;
+            position: relative;
         }
 
         .nav-item {
@@ -128,7 +129,6 @@
             font-size: 20px;
         }
 
-        /* Cards & Lists */
         .card {
             background: white;
             margin: 15px;
@@ -168,10 +168,10 @@
             color: #22543d;
         }
 
-        /* Mobile Sheet/Drawer Overlay for Lessons */
+        /* FIXED SHEET DRAWERS FOR IPHONE */
         .mobile-sheet {
             position: absolute;
-            bottom: 0;
+            bottom: 65px; /* Sits perfectly right on top of the tab bar */
             left: 0;
             right: 0;
             background: white;
@@ -179,13 +179,15 @@
             border-top-right-radius: 20px;
             box-shadow: 0 -5px 25px rgba(0,0,0,0.15);
             padding: 20px;
-            max-height: 80%;
-            overflow-y: auto;
+            padding-bottom: 30px; /* Extra breathing space for inner buttons */
+            max-height: calc(100% - 120px); /* Never takes up full screen */
+            overflow-y: auto; /* Ensures content scrollability */
+            -webkit-overflow-scrolling: touch;
             display: none;
             flex-direction: column;
             gap: 15px;
-            z-index: 20;
-            animation: slideUp 0.25s ease-out;
+            z-index: 25;
+            animation: slideUp 0.2s ease-out;
         }
 
         @keyframes slideUp {
@@ -195,13 +197,12 @@
 
         .sheet-backdrop {
             position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
+            top: 0; left: 0; right: 0; bottom: 65px;
             background: rgba(0,0,0,0.4);
             display: none;
-            z-index: 15;
+            z-index: 20;
         }
 
-        /* Quiz Layout Rules */
         .quiz-options {
             display: flex;
             flex-direction: column;
@@ -219,7 +220,6 @@
             cursor: pointer;
         }
 
-        /* Chat UI Components */
         .chat-area {
             flex-grow: 1;
             padding: 15px;
@@ -228,6 +228,7 @@
             flex-direction: column;
             gap: 12px;
             background: #f7fafc;
+            -webkit-overflow-scrolling: touch;
         }
 
         .chat-bubble {
@@ -272,16 +273,18 @@
         }
 
         .btn {
-            padding: 12px 20px;
+            padding: 14px 20px;
             border: none;
             border-radius: 8px;
             font-weight: bold;
             font-size: 14px;
             cursor: pointer;
+            text-align: center;
         }
 
         .btn-success { background-color: var(--br-green); color: white; }
         .btn-primary { background-color: var(--br-blue); color: white; }
+        .btn-close { background-color: #edf2f7; color: #4a5568; margin-top: 5px; }
 
         .comparison-badge {
             background-color: #feebc8;
@@ -293,13 +296,12 @@
             font-weight: 600;
         }
 
-        /* Tiny UI Indicator Knobs */
         .drag-knob {
             width: 40px;
             height: 5px;
             background-color: #cbd5e0;
             border-radius: 3px;
-            margin: 0 auto 10px auto;
+            margin: 0 auto 5px auto;
         }
     </style>
 </head>
@@ -319,11 +321,10 @@
             <h3 style="margin-bottom: 5px;">Welcome to Your Immersion Path</h3>
             <p style="font-size: 12px; opacity: 0.9;">Tailored for Spanish speakers planning a 3-6 month stay in Brazil.</p>
         </div>
-        <div id="moduleTimelineContainer">
-            </div>
+        <div id="moduleTimelineContainer"></div>
     </section>
 
-    <section id="screen-map" class="screen" style="padding-bottom: 0;">
+    <section id="screen-map" class="screen">
         <div style="padding: 10px 15px; background: white; border-bottom: 1px solid var(--border-color); font-size: 13px; text-align: center; color: #4a5568;" id="mapCurrentLabel">
             Select a module from the Modules tab to map paths.
         </div>
@@ -332,7 +333,7 @@
         </div>
     </section>
 
-    <section id="screen-tutor" class="screen" style="padding-bottom: 0;">
+    <section id="screen-tutor" class="screen">
         <div class="chat-area" id="chatHistory">
             <div class="chat-bubble tutor">
                 Oi! I'm your local AI guide. Since you already have a B1 base in Spanish, I will help you prune the "Portuñol" slips and nail real Brazilian street patterns. Ask me anything, anytime!
@@ -344,8 +345,7 @@
         </div>
     </section>
 
-    <div class="mobile-sheet" id="mobileSheet">
-        </div>
+    <div class="mobile-sheet" id="mobileSheet"></div>
 
     <nav class="bottom-nav">
         <button class="nav-item active" id="btn-nav-modules" onclick="switchTab('modules')">
@@ -364,7 +364,6 @@
 </div>
 
 <script>
-    // IMMUTABLE STRUCTURAL COURSE DATA
     const appData = {
         modules: [
             {
@@ -515,12 +514,9 @@
         ]
     };
 
-    // UI RUNTIME STATE Variables
     let activeTab = 'modules';
     let currentModuleIndex = 0;
     let selectedNode = null;
-
-    // THUMB/TOUCH PAN STATE VARIABLES FOR MOBILE MAP
     let panY = 0;
     let isPanning = false;
     let startTouchY = 0;
@@ -529,24 +525,21 @@
     const ctx = canvas.getContext('2d');
     const canvasContainer = document.getElementById('canvasContainer');
 
-    // TAB MANAGER
     function switchTab(tabId) {
         activeTab = tabId;
-        
-        // Update Bottom Bar UI CSS classes
         document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
         document.getElementById(`btn-nav-${tabId}`).classList.add('active');
 
-        // Toggle Screen Visibility
         document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
         document.getElementById(`screen-${tabId}`).classList.add('active');
 
+        closeSheet();
+
         if (tabId === 'map') {
-            initCanvasSize();
+            setTimeout(initCanvasSize, 50);
         }
     }
 
-    // LIST VIEW COMPONENT GENERATOR
     function renderModulesScreen() {
         const container = document.getElementById('moduleTimelineContainer');
         container.innerHTML = '';
@@ -554,7 +547,6 @@
         appData.modules.forEach((mod, idx) => {
             const row = document.createElement('div');
             row.className = `module-row ${idx === currentModuleIndex ? 'active' : ''}`;
-            
             const badge = mod.completed ? `<span class="status-badge completed">Done ✓</span>` : `<span class="status-badge">In Progress</span>`;
             
             row.innerHTML = `
@@ -572,11 +564,10 @@
         currentModuleIndex = idx;
         renderModulesScreen();
         document.getElementById('mapCurrentLabel').innerText = `Path Map: ${appData.modules[idx].title}`;
-        panY = 0; // reset scroll tracking
+        panY = 0;
         switchTab('map');
     }
 
-    // MOBILE PHONE-OPTIMIZED MAP RENDERING (VERTICAL TIMELINE DESIGN)
     function initCanvasSize() {
         canvas.width = canvasContainer.clientWidth;
         canvas.height = canvasContainer.clientHeight;
@@ -586,12 +577,11 @@
     function drawMobileMap() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.save();
-        ctx.translate(0, panY); // Allow thumb panning up and down easily on phone screen
+        ctx.translate(0, panY);
 
         const currentModule = appData.modules[currentModuleIndex];
         const midX = canvas.width / 2;
 
-        // Draw Linear Vertical Path Way track
         ctx.beginPath();
         ctx.strokeStyle = "#cbd5e0";
         ctx.lineWidth = 4;
@@ -605,12 +595,9 @@
         ctx.stroke();
         ctx.setLineDash([]);
 
-        // Render Touch Nodes
         currentModule.nodes.forEach(node => {
-            // Reposition node configuration programmatically to fit actual device width center
             node.x = midX;
 
-            // Subtle Ring highlight if open
             if (selectedNode && selectedNode.id === node.id) {
                 ctx.beginPath();
                 ctx.arc(node.x, node.y, 35, 0, 2*Math.PI);
@@ -620,7 +607,6 @@
 
             ctx.beginPath();
             ctx.arc(node.x, node.y, 26, 0, 2*Math.PI);
-            
             if (node.status === "completed") {
                 ctx.fillStyle = "var(--correct-color)";
             } else if (node.status === "available") {
@@ -633,14 +619,12 @@
             ctx.lineWidth = 2;
             ctx.stroke();
 
-            // Inner Marker Label Symbol
             ctx.fillStyle = "white";
             ctx.font = "14px sans-serif";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             ctx.fillText(node.type === 'quiz' ? '❓' : '📖', node.x, node.y);
 
-            // Descriptive tag underneath the node line
             ctx.fillStyle = "#2d3748";
             ctx.font = "bold 12px sans-serif";
             ctx.fillText(node.label, node.x, node.y + 42);
@@ -649,14 +633,12 @@
         ctx.restore();
     }
 
-    // TOUCH EVENT BINDINGS FOR PHONE SCREENS (PANNING NODES)
     canvas.addEventListener('touchstart', (e) => {
         const touch = e.touches[0];
         const rect = canvas.getBoundingClientRect();
         const touchX = touch.clientX - rect.left;
         const touchY = touch.clientY - rect.top - panY;
 
-        // Detect touch collision with nodes
         const currentModule = appData.modules[currentModuleIndex];
         let clicked = null;
 
@@ -683,17 +665,13 @@
         if (!isPanning) return;
         const touch = e.touches[0];
         panY = touch.clientY - startTouchY;
-        
-        // Bound constraints
         if (panY > 50) panY = 50;
         if (panY < -200) panY = -200;
-
         drawMobileMap();
     });
 
     canvas.addEventListener('touchend', () => { isPanning = false; });
 
-    // MOBILE DRAWER SHEET CONTROLLER
     function openSheet(node) {
         const sheet = document.getElementById('mobileSheet');
         const backdrop = document.getElementById('backdrop');
@@ -703,16 +681,19 @@
         if (node.type === 'lesson') {
             sheet.innerHTML = `
                 <div class="drag-knob"></div>
-                <h3 style="color:var(--br-blue);">${node.content.title}</h3>
-                <p style="font-size:14px; line-height:1.4; color:#4a5568;">${node.content.text}</p>
-                <div style="background:var(--light-gray); padding:10px; border-left:3px solid var(--br-yellow); font-size:13px;">
+                <h3 style="color:var(--br-blue); padding-right:20px;">${node.content.title}</h3>
+                <p style="font-size:14px; line-height:1.5; color:#4a5568;">${node.content.text}</p>
+                <div style="background:var(--light-gray); padding:12px; border-left:3px solid var(--br-yellow); font-size:13px; border-radius:4px;">
                     <strong>Live Sample:</strong> <em>${node.content.example}</em>
                 </div>
                 <div>
-                    <span class="comparison-badge">🇪🇸 Language Contrast Warning:</span>
+                    <span class="comparison-badge">🇪🇸 Language Contrast:</span>
                     <p style="font-size:13px; color:#4a5568; margin-top:4px;">${node.content.spanishComparison}</p>
                 </div>
-                <button class="btn btn-success" onclick="completeMobileStep('${node.id}')">Got It! Complete ✓</button>
+                <div style="display:flex; flex-direction:column; gap:8px; margin-top:5px;">
+                    <button class="btn btn-success" onclick="completeMobileStep('${node.id}')">Got It! Complete ✓</button>
+                    <button class="btn btn-close" onclick="closeSheet()">Close Lesson</button>
+                </div>
             `;
         } else if (node.type === 'quiz') {
             let optionsHtml = '';
@@ -726,27 +707,26 @@
                 <p style="font-size:14px; font-weight:500;">${node.quiz.question}</p>
                 <div class="quiz-options">${optionsHtml}</div>
                 <div id="sheetFeedback" style="display:none; padding:12px; border-radius:8px; font-size:13px; margin-top:5px;"></div>
+                <button class="btn btn-close" style="margin-top:10px;" onclick="closeSheet()">Cancel</button>
             `;
         }
+        sheet.scrollTop = 0; // Fixes internal scroll position bugs
     }
 
     function closeSheet() {
         document.getElementById('mobileSheet').style.display = "none";
         document.getElementById('backdrop').style.display = "none";
         selectedNode = null;
-        drawMobileMap();
+        if(activeTab === 'map') drawMobileMap();
     }
 
     function completeMobileStep(id) {
         const currentModule = appData.modules[currentModuleIndex];
         const idx = currentModule.nodes.findIndex(n => n.id === id);
-        
         currentModule.nodes[idx].status = "completed";
         if (idx + 1 < currentModule.nodes.length) {
             currentModule.nodes[idx + 1].status = "available";
         }
-
-        // Reevaluate overall stats
         calculateStats();
         closeSheet();
     }
@@ -785,28 +765,22 @@
         renderModulesScreen();
     }
 
-    // CHAT ENGINE FUNCTIONALITY FOR ONE-TAP ACCESS
     function processUserQuestion() {
         const input = document.getElementById('chatInput');
         const text = input.value.trim();
         if (!text) return;
 
         const history = document.getElementById('chatHistory');
-        
-        // Add User Bubble
         const uB = document.createElement('div');
         uB.className = "chat-bubble user";
         uB.innerText = text;
         history.appendChild(uB);
         input.value = '';
-        
         history.scrollTop = history.scrollHeight;
 
-        // Auto Bot simulation reply targeted at B1 Spanish learner profile
         setTimeout(() => {
             const tB = document.createElement('div');
             tB.className = "chat-bubble tutor";
-            
             const low = text.toLowerCase();
             if (low.includes('pão') || low.includes('bread') || low.includes('nasal')) {
                 tB.innerHTML = "To handle 'pão', remember not to finish it with a dental 'N' like Spanish 'pan'. Keep your tongue low and force air out through your nose.";
@@ -815,13 +789,11 @@
             } else {
                 tB.innerHTML = `Great question for your 3-6 month stay here! Keep practicing the active modules to see how daily grammar naturally smooths out.`;
             }
-            
             history.appendChild(tB);
             history.scrollTop = history.scrollHeight;
         }, 600);
     }
 
-    // ENGINE START
     window.onload = () => {
         renderModulesScreen();
         calculateStats();
